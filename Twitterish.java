@@ -32,6 +32,7 @@ public class Twitterish {
         public Client(String serverIp, int port) {
             this.serverIp = serverIp;
             this.port = port;
+            this.feed = new Feed(this.loggedInUser);
         }
 
         private void newAccount(Account account) {
@@ -191,6 +192,7 @@ public class Twitterish {
                     this.sendMessage(new Account(userid, password, name));    
                 }
                 else {
+                    this.loggedInUser.setName(name);
                     this.sendMessage(new NameChange(name)); 
                 }
 
@@ -209,42 +211,45 @@ public class Twitterish {
         }
 
         private void updateFeed() {
-            this.feed = new Feed();
-            this.sendMessage(new SyncRequest());
-            Object o = this.receiveMessage();
-            for (Post p : ((SyncResponse) o).getPosts()) {
-                this.feed.addPost(p);
-            }
+            this.syncWithServer();
+            this.feed.setAccount(this.loggedInUser);
             System.out.print(this.feed.renderAll());
             return; 
         }
 
+        private void updateFriends(Set<Account> accounts) {
+            for(Account fromServer :accounts) {
+                for(Account fromClient : this.loggedInUser.getFriends()) {
+                    if(fromServer.getUserId().equals(fromClient.getUserId())) {
+                        fromClient.setName(fromServer.getName());
+                    }
+                }
+            } 
+        }
+        
         private void syncWithServer() {
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
             
             if (o instanceof SyncResponse) {
-                for(Account serverAccount : ((SyncResponse)o).getUsers()) {
-                    for(Account clientAccount : this.knownUsers) {
-                        if(serverAccount.getUserId().equals(clientAccount.getUserId())) {
-                            knownUsers.remove(clientAccount);
-                            knownUsers.add(serverAccount);
-                        }
-                    }
+                Set<Account> usersFromServer = ((SyncResponse)o).getUsers();
+                this.knownUsers.addAll(usersFromServer);
+
+                //Ändra namnet på de vänner som har bytt namn
+                this.updateFriends(usersFromServer);
+                
+                for (Post p : ((SyncResponse) o).getPosts()) {
+                    this.newPost(p);
                 }
-                this.knownUsers.addAll(((SyncResponse) o).getUsers());
                 // TODO
-                        // Go through all known users on this side of the fence
-                        // and update them if their name has changed
-                    
-                        // TODO
-                        // Only print the posts that I am interested in
+                // Only print the posts that I am interested in
 
                  
 
-                        } else {
-                        System.out.println("Error: expected sync response, got " + o.getClass());
-                    }
+            }
+            else {
+                System.out.println("Error: expected sync response, got " + o.getClass());
+            }
         }
 
 
@@ -286,7 +291,7 @@ public class Twitterish {
         }
 
         private boolean action() {
-            System.out.println("Actions:");
+            System.out.println("\nActions:");
             System.out.print("[P]ost message    | ");
             System.out.print("[S]ync with server | ");
             System.out.print("[U]pdate feed     | ");

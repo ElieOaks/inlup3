@@ -9,7 +9,8 @@ public class Account implements Serializable, Comparable<Account> {
     private boolean passwordReset;
     private Set<Account> friends = new TreeSet<Account>();
     private Set<Account> ignoredFriends = new TreeSet<Account>();
-
+    private int postsAtLastSync;
+    
     public Account(String userId, String password) {
         this.userId   = userId;
         this.password = password;
@@ -78,6 +79,14 @@ public class Account implements Serializable, Comparable<Account> {
 
     public Account[] getFriends() {
         return (Account[]) this.friends.toArray(new Account[0]);
+    }
+
+    public int getPostAtLastSync() {
+        return this.postsAtLastSync;
+    }
+
+    public void setPostAtLastSync(int posts) {
+        this.postsAtLastSync = posts;
     }
 
     public boolean equals(Object o) {

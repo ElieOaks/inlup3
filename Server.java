@@ -47,6 +47,26 @@ public class Server {
         return new TreeSet<Account>(this.knownUsers);
     }
 
+    /// Get all new posts from friends is a special case of get new posts
+    public synchronized List<Post> getNewFriendPosts(Account account) {
+        List<Post> result = new LinkedList<Post>();
+        for (Post p : this.getNewPosts(account)) {
+            if (account.isFriendsWith(p.getPoster())) result.add(p);
+        }
+
+        return result;
+    }
+
+    /// Read "time stamp" from account, then update it 
+    public synchronized List<Post> getNewPosts(Account account) {
+        int since = account.getPostAtLastSync();
+        System.out.println("Antal posts vid förra: "+since);
+        account.setPostAtLastSync(this.posts.size());
+        System.out.println("Antal posts nu: "+this.posts.size());
+
+        return new ArrayList<Post>(this.posts.subList(since, this.posts.size()));
+    }
+    
     public synchronized List<Post> getPosts() {
         return new ArrayList<Post>(this.posts);
     }
@@ -132,18 +152,17 @@ public class Server {
         }
 
         private void updateName(String name) {
-            Account neu = this.account.copyAccount();
-            neu.setName(name);
-            this.updateAccount(this.account, neu);
-            this.account = neu;
+            this.account.setName(name);
+         
         }
 
         private void sync() {
             try {
                 System.out.println("<< SyncResponse");
+                this.outgoing.reset();
                 this.outgoing.
                     writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
-                                                 new LinkedList<Post>(this.server.getPosts())));
+                                                 new LinkedList<Post>(this.server.getNewFriendPosts(this.account))));
                 this.outgoing.flush();
             } catch (IOException ioe) {
                 ioe.printStackTrace();
