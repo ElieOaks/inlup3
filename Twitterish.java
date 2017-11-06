@@ -150,10 +150,33 @@ public class Twitterish {
             System.out.println("Ignored " + friend.getName());
         }
 
+        private void unIgnoreFriend() {
+            if (this.loggedInUser.hasFriends() == false) {
+                System.out.println("You don't have any friends at all. Try to make a few friends and ignore them first.");
+                return;
+            }
+
+            System.out.println("Who to un-ignore?");
+            Account[] friends = this.loggedInUser.getFriends();
+            this.printEnumeratedChoices(friends);
+
+            String choiceString = System.console().readLine();
+            int choice = Integer.parseInt(choiceString);
+            Account friend = friends[choice];
+
+             if (this.loggedInUser.isCurrentlyIgnoring(friend)) {
+                this.loggedInUser.unIgnoreFriend(friend);
+                System.out.println("Unignoring " + friend.getName());
+                return;
+            }
+             System.out.println("You have not previously ignored " + friend.getName());
+        }
+
         private void quit() {
             System.out.println("Logging out...");
             this.sendMessage(new Logout(this.loggedInUser));
         }
+
 
         private void editAccount() {
             System.out.print("Enter your password: ");
@@ -165,6 +188,7 @@ public class Twitterish {
 
                 System.out.print("Enter your user name: ");
                 String name = System.console().readLine();
+
 
                 String userid = this.loggedInUser.getUserId();
                 this.sendMessage(new Account(userid, password, name));
@@ -190,18 +214,18 @@ public class Twitterish {
                 // TODO
                 // Go through all known users on this side of the fence
                 // and update them if their name has changed
-
-                // TODO
-                // Only print the posts that I am interested in
-
-                // TODO
-                // Use the feed object for this
-                for (Post p : ((SyncResponse) o).getPosts())
-                    System.out.println(p.render());
-
             } else {
                 System.out.println("Error: expected sync response, got " + o.getClass());
             }
+        }
+
+        private void updateFeed() {
+            this.feed = new Feed();
+            this.sendMessage(new SyncRequest());
+            Object o = this.receiveMessage();
+            for (Post p : ((SyncResponse) o).getPosts())
+                this.newPost(p);
+            System.out.println(this.feed.renderAll());
         }
 
         private ObjectOutputStream outgoing;
@@ -247,10 +271,12 @@ public class Twitterish {
             System.out.println("Actions:");
             System.out.print("[P]ost message     |  ");
             System.out.print("[S]ync with server |  ");
+            System.out.print("[U]pdate Feed      |  ");
             System.out.print("[A]dd friend       |  ");
             System.out.print("[R]emove friend    |  ");
             System.out.println();
             System.out.print("[I]gnore friend    |  ");
+            System.out.print("[N]ot-ignore friend |  ");            
             System.out.print("[L]ist friends     |  ");
             System.out.print("[E]dit account     |  ");
             System.out.print("[Q]uit");
@@ -270,6 +296,9 @@ public class Twitterish {
             case 's':
                 this.syncWithServer();
                 return true;
+            case 'u':
+                this.updateFeed();
+                return true;
             case 'a':
                 this.addFriend();
                 return true;
@@ -278,6 +307,9 @@ public class Twitterish {
                 return true;
             case 'i':
                 this.ignoreFriend();
+                return true;
+            case 'n':
+                this.unIgnoreFriend();
                 return true;
             case 'e':
                 this.editAccount();
