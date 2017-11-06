@@ -191,8 +191,7 @@ public class Twitterish {
                     this.sendMessage(new Account(userid, password, name));    
                 }
                 else {
-                    this.loggedInUser.setName(name);
-                    this.sendMessage(new NameChange(this.loggedInUser)); 
+                    this.sendMessage(new NameChange(name)); 
                 }
 
             } else {
@@ -223,20 +222,29 @@ public class Twitterish {
         private void syncWithServer() {
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
+            
             if (o instanceof SyncResponse) {
+                for(Account serverAccount : ((SyncResponse)o).getUsers()) {
+                    for(Account clientAccount : this.knownUsers) {
+                        if(serverAccount.getUserId().equals(clientAccount.getUserId())) {
+                            knownUsers.remove(clientAccount);
+                            knownUsers.add(serverAccount);
+                        }
+                    }
+                }
                 this.knownUsers.addAll(((SyncResponse) o).getUsers());
                 // TODO
-                // Go through all known users on this side of the fence
-                // and update them if their name has changed
+                        // Go through all known users on this side of the fence
+                        // and update them if their name has changed
                     
-                // TODO
-                // Only print the posts that I am interested in
+                        // TODO
+                        // Only print the posts that I am interested in
 
                  
 
-            } else {
-                System.out.println("Error: expected sync response, got " + o.getClass());
-            }
+                        } else {
+                        System.out.println("Error: expected sync response, got " + o.getClass());
+                    }
         }
 
 

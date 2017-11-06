@@ -131,12 +131,11 @@ public class Server {
             server.addAccount(neu);
         }
 
-        private void updateName(Account neu) {
-            for(Account user : this.server.knownUsers) {
-                if(user.getUserId().equals(neu.getUserId())) {
-                    user.setName(neu.getName());
-                }
-            }
+        private void updateName(String name) {
+            Account neu = this.account.copyAccount();
+            neu.setName(name);
+            this.updateAccount(this.account, neu);
+            this.account = neu;
         }
 
         private void sync() {
@@ -159,22 +158,22 @@ public class Server {
                     // o instanceof Account checks if o is an account
                     // (Account) o type casts o into an Account so that it can be used as one
                     if (o instanceof NameChange) {
-                        this.updateName( ((NameChange) o).getAccount()); 
+                        this.updateName( ((NameChange) o).getName()); 
                     }
-                    if (o instanceof Account) {
-                        this.updateAccount(this.account, (Account) o); 
-                    } else if (o instanceof PostMessage) {
-                        this.postMessage(((PostMessage) o).getMsg());
-                    } else if (o instanceof AddFriend) {
-                        this.addFriend(((AddFriend) o).getFriend());
-                    } else if (o instanceof RemoveFriend) {
-                        this.removeFriend(((RemoveFriend) o).getFriend());
-                    } else if (o instanceof SyncRequest) {
-                        this.sync();
-                    } else if (o instanceof Logout) {
-                        this.logout(((Logout) o).getAccount());
-                        return;
-                    }
+                            if (o instanceof Account) {
+                                this.updateAccount(this.account, (Account) o); 
+                            } else if (o instanceof PostMessage) {
+                                this.postMessage(((PostMessage) o).getMsg());
+                            } else if (o instanceof AddFriend) {
+                                this.addFriend(((AddFriend) o).getFriend());
+                            } else if (o instanceof RemoveFriend) {
+                                this.removeFriend(((RemoveFriend) o).getFriend());
+                            } else if (o instanceof SyncRequest) {
+                                this.sync();
+                            } else if (o instanceof Logout) {
+                                this.logout(((Logout) o).getAccount());
+                                return;
+                            }
                 }
             } catch (Exception e) {
                 // BAD Practise. Never catch "Exception"s. Too general.

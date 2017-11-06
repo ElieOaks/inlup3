@@ -20,9 +20,14 @@ public class Account implements Serializable, Comparable<Account> {
         this.name = name;
     }
 
+    public Account copyAccount() {
+        return new Account(this.userId, this.password);
+    }
+
     public String getName() {
         return this.name;
     }
+    
     public void setName(String name) {
         this.name = name;
     }
