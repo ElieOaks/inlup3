@@ -34,7 +34,7 @@ public class Server {
 
         return null;
     }
-
+    
     public synchronized void addAccount(Account a) {
         this.knownUsers.add(a);
     }
@@ -131,12 +131,20 @@ public class Server {
             server.addAccount(neu);
         }
 
+        private void updateName(Account neu) {
+            for(Account user : this.server.knownUsers) {
+                if(user.getUserId().equals(neu.getUserId())) {
+                    user.setName(neu.getName());
+                }
+            }
+        }
+
         private void sync() {
             try {
                 System.out.println("<< SyncResponse");
                 this.outgoing.
-                writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
-                                             new LinkedList<Post>(this.server.getPosts())));
+                    writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
+                                                 new LinkedList<Post>(this.server.getPosts())));
                 this.outgoing.flush();
             } catch (IOException ioe) {
                 ioe.printStackTrace();
@@ -150,8 +158,11 @@ public class Server {
                     System.err.println(">> Received: " + o.getClass().getName());
                     // o instanceof Account checks if o is an account
                     // (Account) o type casts o into an Account so that it can be used as one
+                    if (o instanceof NameChange) {
+                        this.updateName( ((NameChange) o).getAccount()); 
+                    }
                     if (o instanceof Account) {
-                        this.updateAccount(this.account, (Account) o);
+                        this.updateAccount(this.account, (Account) o); 
                     } else if (o instanceof PostMessage) {
                         this.postMessage(((PostMessage) o).getMsg());
                     } else if (o instanceof AddFriend) {
