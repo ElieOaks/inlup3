@@ -4,6 +4,7 @@ import java.net.*;
 
 public class Server {
     private Set<Account> knownUsers = new TreeSet<Account>();
+    private Set<Login> knownLogins = new TreeSet<Login>();
     private List<Post> posts = new LinkedList<Post>();
 
     public static void main(String[] args) {
@@ -34,9 +35,21 @@ public class Server {
 
         return null;
     }
+
+    
+    private Login getLoginFor(String userId) {
+        for (Login a : this.knownLogins)
+            if (a.getAccount().getUserId().equals(userId)) return a;
+
+        return null;
+    }
     
     public synchronized void addAccount(Account a) {
         this.knownUsers.add(a);
+    }
+
+    private synchronized void addLogin(Login l) {
+        this.knownLogins.add(l);
     }
 
     public synchronized void removeAccount(Account a) {
@@ -49,6 +62,7 @@ public class Server {
 
     /// Get all new posts from friends is a special case of get new posts
     public synchronized List<Post> getNewFriendPosts(Account account) {
+        assert(account != null);
         List<Post> result = new LinkedList<Post>();
         for (Post p : this.getNewPosts(account)) {
             if (account.isFriendsWith(p.getPoster())) result.add(p);
@@ -77,6 +91,7 @@ public class Server {
 
     static class ClientProxy extends Thread {
         private Account account;
+        // private Login login;
         private Socket socket;
         private Server server;
         private ObjectOutputStream outgoing;
@@ -84,6 +99,7 @@ public class Server {
 
         private ClientProxy(Account account, Socket socket, Server server, ObjectInputStream incoming) throws IOException {
             this.account = account;
+            //this.login = login;
             this.server  = server;
             this.socket  = socket;
             this.incoming = incoming;
@@ -98,17 +114,27 @@ public class Server {
             Object handShake = incoming.readObject();
 
             if (handShake instanceof Login) {
-                Account account = ((Login) handShake).getAccount();
+                Account account      = ((Login) handShake).getAccount();
+                Login knownLogin     = server.getLoginFor(account.getUserId());
                 Account knownAccount = server.getAccountFor(account.getUserId());
 
-                if (knownAccount == null) {
+                if (knownLogin == null) {
+                    System.out.println("Lägger till ett nytt Login till servern");
                     server.addAccount(account);
+                    server.addLogin((Login) handShake); 
                     new ClientProxy(account, socket, server, incoming).start();
-                } else {
-                    if (knownAccount.getPassword().equals(account.getPassword()) == false) throw new RuntimeException("Wrong password");
-                    new ClientProxy(knownAccount, socket, server, incoming).start();
                 }
-            } else {
+                
+                else {
+                    if (knownLogin.getPassword().equals(((Login) handShake).getPassword()) == false){
+                        throw new RuntimeException("Wrong password");
+                    }
+                    System.out.println("Servern känner igen användaren...");
+                    new ClientProxy(knownAccount, socket, server, incoming).start(); //Denna ska troligen vara knownAccount men då får vi nullPointerException.
+                }
+            }
+
+            else {
                 System.err.println("!! Bad connection attempt from: " + socket.getInetAddress() + ":" + socket.getPort());
             }
         }
@@ -122,7 +148,8 @@ public class Server {
         }
 
         private void logout(Account a) {
-            this.server.removeAccount(a);
+            //tar inte bort kontot vid utloggning.
+            //this.server.removeAccount(a);
             System.out.println("!! " + a.getUserId() + " left the building");
             try {
                 this.outgoing.close();
@@ -179,20 +206,24 @@ public class Server {
                     if (o instanceof NameChange) {
                         this.updateName( ((NameChange) o).getName()); 
                     }
-                            if (o instanceof Account) {
-                                this.updateAccount(this.account, (Account) o); 
-                            } else if (o instanceof PostMessage) {
-                                this.postMessage(((PostMessage) o).getMsg());
-                            } else if (o instanceof AddFriend) {
-                                this.addFriend(((AddFriend) o).getFriend());
-                            } else if (o instanceof RemoveFriend) {
-                                this.removeFriend(((RemoveFriend) o).getFriend());
-                            } else if (o instanceof SyncRequest) {
-                                this.sync();
-                            } else if (o instanceof Logout) {
-                                this.logout(((Logout) o).getAccount());
-                                return;
-                            }
+                    if (o instanceof Account) {
+                        this.updateAccount(this.account, (Account) o);
+                    } else if (o instanceof PostMessage) {
+                        this.postMessage(((PostMessage) o).getMsg());
+                    } else if (o instanceof AddFriend) {
+                        this.addFriend(((AddFriend) o).getFriend());
+                    } else if (o instanceof RemoveFriend) {
+                        this.removeFriend(((RemoveFriend) o).getFriend());
+                    } else if (o instanceof SyncRequest) {
+                        this.sync();
+                    } else if (o instanceof Logout) {
+                        this.logout(((Logout) o).getAccount());
+                        return;
+                    }
+                    else if (o instanceof Login) {
+                        System.out.println("Ett login");
+                        return;
+                    }
                 }
             } catch (Exception e) {
                 // BAD Practise. Never catch "Exception"s. Too general.

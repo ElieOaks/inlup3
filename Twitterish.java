@@ -22,7 +22,7 @@ public class Twitterish {
         private Account loggedInUser;
         private Set<Account> knownUsers = new TreeSet<Account>();
         private Feed feed;
-
+        private Login login;
         private ObjectOutputStream outgoing;
         private ObjectInputStream incoming;
         private String serverIp;
@@ -179,7 +179,7 @@ public class Twitterish {
             System.out.print("Enter your password: ");
             String password = new String(System.console().readPassword());
 
-            if (password.equals(this.loggedInUser.getPassword())) {
+            if (password.equals(this.login.getPassword())) {
                 System.out.print("Update your password: ");
                 password = new String(System.console().readPassword());
 
@@ -189,7 +189,7 @@ public class Twitterish {
                 String userid = this.loggedInUser.getUserId();
 
                 if(name.equals(this.loggedInUser.getName())) {
-                    this.sendMessage(new Account(userid, password, name));    
+                    this.sendMessage(new Account(userid, name));    
                 }
                 else {
                     this.loggedInUser.setName(name);
@@ -232,6 +232,7 @@ public class Twitterish {
             Object o = this.receiveMessage();
             
             if (o instanceof SyncResponse) {
+                System.out.println("o instanceof SyncResponse");
                 Set<Account> usersFromServer = ((SyncResponse)o).getUsers();
                 this.knownUsers.addAll(usersFromServer);
 
@@ -243,8 +244,6 @@ public class Twitterish {
                 }
                 // TODO
                 // Only print the posts that I am interested in
-
-                 
 
             }
             else {
@@ -267,14 +266,14 @@ public class Twitterish {
 
             assert(userid.length() > 0);
             assert(password.length() > 0);
-            assert(name.length() > 0);
+            assert(name.length() > 0); 
+            
+            System.out.println("Logging in new user " + userid + "..."); 
 
-            System.out.println("Logging in new user " + userid + "...");
-            outgoing.writeObject(new Login(new Account(userid, password, name)));
-
+            outgoing.writeObject(new Login(new Account(userid, name), password));
             this.outgoing = outgoing;
             incoming = new ObjectInputStream(socket.getInputStream());
-            Account a = (Account) receiveMessage();
+            Account a = (Account) receiveMessage(); 
             this.loggedInUser = a;
         }
 

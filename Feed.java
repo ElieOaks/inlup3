@@ -8,6 +8,7 @@ public class Feed {
     public Feed(Account account) {
         this.account = account;
     }
+    
     public void addPost(Post post) {
         posts.add(0, post);
     }
