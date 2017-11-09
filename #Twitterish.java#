@@ -84,17 +84,17 @@ public class Twitterish {
         }
 
         private void comment() {
-            printPostsForComment();
+            printPostsForComment(); 
             int choice = select("What to comment?", this.feed.getPosts().size());
             Post toComment = this.feed.getPosts().get(choice);
-
+            
             System.out.println("Write your comment: ");
             String comment = System.console().readLine();
 
             if(comment != "") {
                 toComment.addComment(new Comment(this.loggedInUser, comment));
                 sendMessage(new CommentMessage(comment, toComment.getPostId(), this.loggedInUser));
-            }   
+            }
         }
 
         private void printPostsForComment() {
@@ -102,7 +102,7 @@ public class Twitterish {
             for(Post p : this.feed.getPosts()) {
                 System.out.print(i + " " + p.render());
                 i++;
-            }
+            } 
         }
 
         private void printEnumeratedChoices(Account[] choices) {
@@ -324,9 +324,6 @@ public class Twitterish {
             }
         }
 
-        private void commentPost() {
-            
-        }
 
         //Hanterar inkommande svar på vänförfrågningar
         private void handleResponse(FriendRequestResponse r) {
@@ -457,7 +454,7 @@ public class Twitterish {
                 this.listFriends();
                 return true;
             case 'c':
-                this.comment();
+                this.printPostsForComment();
                 return true;
             case 'q':
                 this.quit();

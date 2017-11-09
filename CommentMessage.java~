@@ -1,0 +1,15 @@
+import java.io.Serializable;
+
+public class CommentMessage implements Serializable {
+    private String comment;
+    private int postId;
+
+    public CommentMessage(String comment, int postId) {
+        this.comment = comment;
+        this.postId = postId;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+}

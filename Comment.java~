@@ -1,0 +1,17 @@
+public class Comment {
+    private Account authour;
+    String comment;
+
+    public Comment(Account authour, String comment) {
+        this.author = author;
+        this.comment = comment;
+    }
+
+    public String getComment() {
+        return this.comment;
+    }
+
+    public Account getAuthor() {
+        return this.author;
+    }
+}

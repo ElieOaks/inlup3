@@ -65,7 +65,6 @@ public class Server {
     /// Get all new posts from friends is a special case of get new posts
     public synchronized List<Post> getNewFriendPosts(Account account) {
         List<Post> result = new LinkedList<Post>(); 
-        System.out.println("I getNewFriendPosts");
         for (Post p : this.getNewPosts(account)) {
             if (p.getPoster().isFriendsWith(account)){
                 result.add(p);  
@@ -77,7 +76,6 @@ public class Server {
 
     /// Read "time stamp" from account, then update it 
     public synchronized List<Post> getNewPosts(Account account) {
-        System.out.println("I getNewPosts");
         int since = account.getPostAtLastSync();
         System.out.println("Antal posts vid förra: "+since);
         account.setPostAtLastSync(this.posts.size());
@@ -281,8 +279,7 @@ public class Server {
                         this.updateAccount(this.account, (Account) o);
                     }
                     else if(o instanceof CommentMessage) {
-                        this.addComment((CommentMessage)o);
-                        System.out.println("Klar med addComment");
+                        this.addComment((CommentMessage)o); 
                     }
                     else if (o instanceof PostMessage) {
                         this.postMessage(((PostMessage) o).getMsg());
