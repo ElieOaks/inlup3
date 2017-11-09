@@ -95,34 +95,33 @@ public class Twitterish {
                 return;
             }
 
-            System.out.println("Who to befriend?");
-
             Account[] knownUsers = (Account[]) this.knownUsers.toArray(new Account[0]);
             Arrays.sort(knownUsers);
             printEnumeratedChoices(knownUsers);
 
-            String choiceString = System.console().readLine();
-            int choice = Integer.parseInt(choiceString);
+            int choice = select("Who to befriend?", this.knownUsers.size());
             Account friend = knownUsers[choice];
 
-            sendMessage(new AddFriend(friend));
-            this.loggedInUser.addFriend(friend);
+            sendMessage(new FriendRequest(this.loggedInUser, friend));
+            //this.loggedInUser.addFriend(friend);
 
-            System.out.println("Befriended " + friend.getName());
+            //System.out.println("Befriended " + friend.getName());
+            System.out.println("Request sent to " + friend.getName()); 
         }
 
+        private boolean validIndex(int index, int max) {
+            return index >= 0 && index < max;
+        }
         private void removeFriend() {
             if (this.loggedInUser.hasFriends() == false) {
                 System.out.println("You don't have anyone to unfriend. Try to make a few friends first.");
                 return;
             }
 
-            System.out.println("Who to unfriend?");
             Account[] friends = this.loggedInUser.getFriends();
-            this.printEnumeratedChoices(friends);
-
-            String choiceString = System.console().readLine();
-            int choice = Integer.parseInt(choiceString);
+            this.printEnumeratedChoices(friends); 
+            
+            int choice = select("Who to unfriend?", this.loggedInUser.getFriends().length);
             Account friend = friends[choice];
 
             sendMessage(new RemoveFriend(friend));
@@ -131,18 +130,26 @@ public class Twitterish {
             System.out.println("Unfriended " + friend.getName());
         }
 
+        private int select(String question, int max) {
+            int choice = 0;
+            do {
+                System.out.println(question);
+                String choiceString = System.console().readLine();
+                choice = Integer.parseInt(choiceString); 
+            } while (!validIndex(choice, max)); 
+            return choice;
+        }
+
         private void unIgnoreFriend() {
             if (this.loggedInUser.hasFriends() == false) {
                 System.out.println("You don't have anyone to ignore. Try to make a few friends first.");
                 return;
             }
             
-            System.out.println("Who to unignore?");
             Account[] friends = this.loggedInUser.getFriends();
             this.printEnumeratedChoices(friends);
-
-            String choiceString = System.console().readLine();
-            int choice = Integer.parseInt(choiceString);
+            
+            int choice = select("Who to unignore?", this.loggedInUser.getFriends().length);
             Account friend = friends[choice];
 
             if(this.loggedInUser.isCurrentlyIgnoring(friend))
@@ -157,16 +164,13 @@ public class Twitterish {
                 return;
             }
 
-            System.out.println("Who to ignore?");
             Account[] friends = this.loggedInUser.getFriends();
             this.printEnumeratedChoices(friends);
-
-            String choiceString = System.console().readLine();
-            int choice = Integer.parseInt(choiceString);
+            
+            int choice = select("Who to ignore?", this.loggedInUser.getFriends().length);
             Account friend = friends[choice];
 
             this.loggedInUser.ignoreFriend(friend);
-
             System.out.println("Ignored " + friend.getName());
         }
 
@@ -175,28 +179,47 @@ public class Twitterish {
             this.sendMessage(new Logout(this.loggedInUser));
         }
 
+        private void editName() {
+            System.out.print("Enter your user name (presently " + this.loggedInUser.getName() + "): ");
+            String name = System.console().readLine();
+            this.loggedInUser.setName(name);
+            this.sendMessage(new NameChange(name)); 
+        }
+
+        private void editPassword() {
+            System.out.print("Update your password: ");
+            String password = new String(System.console().readPassword());
+            this.login.setPassword(password);
+            this.sendMessage(new PasswordChange(password));
+        }
         private void editAccount() {
             System.out.print("Enter your password: ");
             String password = new String(System.console().readPassword());
 
             if (password.equals(this.login.getPassword())) {
-                System.out.print("Update your password: ");
-                password = new String(System.console().readPassword());
-
-                System.out.print("Enter your user name (presently "+this.loggedInUser.getName()+"): ");
-                
-                String name = System.console().readLine();
-                String userid = this.loggedInUser.getUserId();
-
-                if(name.equals(this.loggedInUser.getName())) {
-                    this.sendMessage(new Account(userid, name));    
+                System.out.println("Edit [n]ame or [p]assword:");
+                String input = System.console().readLine().toLowerCase(); 
+                if (input.length() != 1) {
+                    System.out.println("Invalid input");
+                    return;
                 }
-                else {
-                    this.loggedInUser.setName(name);
-                    this.sendMessage(new NameChange(name)); 
+                switch (input.charAt(0)) {
+                case 'n': {
+                    editName();
+                    break;
+                }
+                case 'p': {
+                    editPassword();
+                    break;
+                }
+                default: {
+                    System.out.println("Invalid choice.");
+                    return;
+                }
                 }
 
-            } else {
+            }
+            else {
                 System.out.println("Wrong password!");
             }
         }
@@ -217,14 +240,83 @@ public class Twitterish {
             return; 
         }
 
+        private void updatePosts(Account account) {
+            for (Post p : this.feed.getPosts()) {
+                if(p.getPoster().getUserId().equals(account.getUserId())) {
+                    p.getPoster().setName(account.getName());
+                }
+            }
+        }
+
+        /// Uppdaterar namnändringar i listan av vänner
         private void updateFriends(Set<Account> accounts) {
-            for(Account fromServer :accounts) {
+            for(Account fromServer : accounts) {
                 for(Account fromClient : this.loggedInUser.getFriends()) {
                     if(fromServer.getUserId().equals(fromClient.getUserId())) {
-                        fromClient.setName(fromServer.getName());
+                        String newName = fromServer.getName();
+                        fromClient.setName(newName);
+                        updatePosts(fromClient);
                     }
                 }
             } 
+        }
+
+        private void approveFriendRequest(Account friend) {
+            this.loggedInUser.addFriend(friend);
+            System.out.println("Du godkände " + friend.getName() + "'s förfrågan.");
+            sendMessage(new FriendRequestResponse(friend, this.loggedInUser, true));
+            sendMessage(new AddFriend(friend));
+        }
+
+        private void declineFriendRequest(Account friend) {
+            System.out.println("Du avböjde " + friend.getName() + "'s förfrågan.");
+            sendMessage(new FriendRequestResponse(friend, this.loggedInUser, false));
+        }
+
+        /// Hanterar inkommande vänförfrågningar
+        private void respondToFriend(FriendRequest f) {
+            Account friend = f.getRequester(); 
+            String name    = friend.getName();
+            
+            System.out.println("En vänförfrågan från " + name + "! [A]cceptera eller a[v]böj.");
+            String answer = System.console().readLine().toLowerCase();
+            
+            if(answer.length() != 1) {
+                System.out.println("Invalid input!");
+                return;
+            }
+
+            while(true) {
+                switch (answer.charAt(0)) {
+                case 'a': {
+                    this.approveFriendRequest(friend);
+                    return;
+                } 
+                case 'v': {
+                    this.declineFriendRequest(friend);
+                    return;
+                }
+                default:
+                    System.out.println("Ogiltigt val!");
+                }
+            }
+        }
+
+        //Hanterar inkommande svar på vänförfrågningar
+        private void handleResponse(FriendRequestResponse r) {
+            if(r.hasAccepted()) {
+                this.loggedInUser.addFriend(r.getRespondingUser());
+                System.out.println(r.getRespondingUser().getName() + " accepterade din vänförfrågan!");
+                sendMessage(new AddFriend(r.getRespondingUser()));
+            }
+            else {
+                if(r.hasTimedOut()) {
+                    System.out.println("Förfrågan besvarades inte i tid.");
+                }
+                else {
+                    System.out.println(r.getRespondingUser().getName() + " avböjde din vänförfrågan!");
+                } 
+            }
         }
         
         private void syncWithServer() {
@@ -232,16 +324,14 @@ public class Twitterish {
             Object o = this.receiveMessage();
             
             if (o instanceof SyncResponse) {
-                System.out.println("o instanceof SyncResponse");
                 Set<Account> usersFromServer = ((SyncResponse)o).getUsers();
-                this.knownUsers.addAll(usersFromServer);
-
-                //Ändra namnet på de vänner som har bytt namn
+                this.knownUsers.addAll(usersFromServer); 
                 this.updateFriends(usersFromServer);
                 
-                for (Post p : ((SyncResponse) o).getPosts()) {
-                    this.newPost(p);
-                }
+                for (Post p : ((SyncResponse) o).getPosts()) this.newPost(p);
+                for (FriendRequestResponse r : ((SyncResponse) o).getResponses()) this.handleResponse(r); 
+                for (FriendRequest f : ((SyncResponse) o).getRequests()) this.respondToFriend(f);   
+                
                 // TODO
                 // Only print the posts that I am interested in
 
@@ -269,8 +359,8 @@ public class Twitterish {
             assert(name.length() > 0); 
             
             System.out.println("Logging in new user " + userid + "..."); 
-
-            outgoing.writeObject(new Login(new Account(userid, name), password));
+            this.login = new Login(new Account(userid, name), password);
+            outgoing.writeObject(this.login);
             this.outgoing = outgoing;
             incoming = new ObjectInputStream(socket.getInputStream());
             Account a = (Account) receiveMessage(); 

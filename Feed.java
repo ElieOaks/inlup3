@@ -13,6 +13,10 @@ public class Feed {
         posts.add(0, post);
     }
 
+    public List<Post> getPosts() {
+        return this.posts;
+    }
+
     public String renderAll() {
         return this.render(posts.size());
     }

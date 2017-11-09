@@ -6,7 +6,9 @@ public class Server {
     private Set<Account> knownUsers = new TreeSet<Account>();
     private Set<Login> knownLogins = new TreeSet<Login>();
     private List<Post> posts = new LinkedList<Post>();
-
+    private Set<FriendRequest> pendingFriendRequests = new TreeSet<FriendRequest>();
+    private Set<FriendRequestResponse> friendRequestResponses = new TreeSet<FriendRequestResponse>();
+    
     public static void main(String[] args) {
         try {
             ServerSocket socket = new ServerSocket(args.length > 0 ? Integer.parseInt(args[0]) : 8080);
@@ -62,10 +64,12 @@ public class Server {
 
     /// Get all new posts from friends is a special case of get new posts
     public synchronized List<Post> getNewFriendPosts(Account account) {
-        assert(account != null);
-        List<Post> result = new LinkedList<Post>();
+        List<Post> result = new LinkedList<Post>(); 
+        
         for (Post p : this.getNewPosts(account)) {
-            if (account.isFriendsWith(p.getPoster())) result.add(p);
+            if (p.getPoster().isFriendsWith(account)){
+                result.add(p);  
+            } 
         }
 
         return result;
@@ -78,7 +82,7 @@ public class Server {
         account.setPostAtLastSync(this.posts.size());
         System.out.println("Antal posts nu: "+this.posts.size());
 
-        return new ArrayList<Post>(this.posts.subList(since, this.posts.size()));
+        return new ArrayList<Post>(this.posts.subList(since, this.posts.size())); 
     }
     
     public synchronized List<Post> getPosts() {
@@ -179,8 +183,57 @@ public class Server {
         }
 
         private void updateName(String name) {
-            this.account.setName(name);
-         
+            this.account.setName(name); 
+        }
+
+        private void updatePassword(Account account, String password) {
+            Login l = this.server.getLoginFor(account.getUserId()); 
+            l.setPassword(password);
+        }
+
+        private Set<FriendRequest> getFriendRequests() {
+            String user = this.account.getUserId();
+            Set<FriendRequest> requests = new TreeSet<FriendRequest>();
+
+            for(FriendRequest f : this.server.pendingFriendRequests) {
+                String toBefriend = f.getToBefriend().getUserId();
+                if(toBefriend.equals(user)) {
+                    requests.add(f);
+                    this.server.pendingFriendRequests.remove(f);
+                }
+            }
+            return requests;
+        }
+
+        private void queueFriendRequestResponses(FriendRequestResponse response) {
+            this.server.friendRequestResponses.add(response);
+        }
+
+        
+        private Set<FriendRequestResponse> getFriendRequestResponses() {
+            Set<FriendRequestResponse> responses = new TreeSet<FriendRequestResponse>();
+            String userId = this.account.getUserId();
+            
+            for(FriendRequestResponse r : this.server.friendRequestResponses) {
+                String askingUserId = r.getAskingUser().getUserId();
+                if(askingUserId.equals(userId)) {
+                    responses.add(r);
+                    this.server.friendRequestResponses.remove(r);
+                }
+            }
+
+            for(FriendRequest f : this.server.pendingFriendRequests) {
+                String askingUserId = f.getRequester().getUserId();
+                if(askingUserId.equals(userId) && f.hasTimedOut()) {
+                    responses.add(new FriendRequestResponse(this.account, f.getToBefriend()));
+                    this.server.pendingFriendRequests.remove(f);
+                }
+            }
+            return responses;
+        }
+        
+        private void queueFriendRequest(FriendRequest request) {
+            this.server.pendingFriendRequests.add(request);
         }
 
         private void sync() {
@@ -189,9 +242,11 @@ public class Server {
                 this.outgoing.reset();
                 this.outgoing.
                     writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
-                                                 new LinkedList<Post>(this.server.getNewFriendPosts(this.account))));
+                                                 new LinkedList<Post>(this.server.getNewFriendPosts(this.account)),
+                                                 new TreeSet<FriendRequestResponse>(this.getFriendRequestResponses()),
+                                                 new TreeSet<FriendRequest>(this.getFriendRequests())));
                 this.outgoing.flush();
-            } catch (IOException ioe) {
+                                } catch (IOException ioe) {
                 ioe.printStackTrace();
             }
         }
@@ -200,13 +255,18 @@ public class Server {
             try {
                 while (true) {
                     Object o = this.incoming.readObject();
-                    System.err.println(">> Received: " + o.getClass().getName());
+                    //System.err.println(">> Received: " + o.getClass().getName());
                     // o instanceof Account checks if o is an account
                     // (Account) o type casts o into an Account so that it can be used as one
-                    if (o instanceof NameChange) {
+                    if (o instanceof FriendRequest) {
+                        queueFriendRequest((FriendRequest)o);
+                    } else if (o instanceof FriendRequestResponse) {
+                        queueFriendRequestResponses((FriendRequestResponse)o);
+                    } else if (o instanceof PasswordChange) {
+                        updatePassword(this.account, ((PasswordChange) o).getPassword());
+                    } else if (o instanceof NameChange) {
                         this.updateName( ((NameChange) o).getName()); 
-                    }
-                    if (o instanceof Account) {
+                    } else if (o instanceof Account) {
                         this.updateAccount(this.account, (Account) o);
                     } else if (o instanceof PostMessage) {
                         this.postMessage(((PostMessage) o).getMsg());
@@ -218,10 +278,6 @@ public class Server {
                         this.sync();
                     } else if (o instanceof Logout) {
                         this.logout(((Logout) o).getAccount());
-                        return;
-                    }
-                    else if (o instanceof Login) {
-                        System.out.println("Ett login");
                         return;
                     }
                 }

@@ -9,22 +9,22 @@ public class Account 5,78
     private int postsAtLastSync;Account.postsAtLastSync11,358
     public Account(Account.Account13,396
     public Account(Account.Account17,471
-    public String getName(Account.getName23,576
-    public void setName(Account.setName27,643
-    public String getUserId(Account.getUserId31,719
-    public void setUserId(Account.setUserId34,785
-    public void addFriend(Account.addFriend38,865
-    public void removeFriend(Account.removeFriend42,940
-    public void ignoreFriend(Account.ignoreFriend46,1021
-    public void unIgnoreFriend(Account.unIgnoreFriend50,1133
-    public boolean isFriendsWith(Account.isFriendsWith54,1250
-    public boolean isCurrentlyIgnoring(Account.isCurrentlyIgnoring58,1344
-    public int compareTo(Account.compareTo62,1451
-    public boolean hasFriends(Account.hasFriends66,1544
-    public Account[] getFriends(Account.getFriends70,1625
-    public int getPostAtLastSync(Account.getPostAtLastSync74,1733
-    public void setPostAtLastSync(Account.setPostAtLastSync78,1814
-    public boolean equals(Account.equals82,1906
+    public String getName(Account.getName24,606
+    public void setName(Account.setName28,673
+    public String getUserId(Account.getUserId32,749
+    public void setUserId(Account.setUserId35,815
+    public void addFriend(Account.addFriend39,895
+    public void removeFriend(Account.removeFriend43,970
+    public void ignoreFriend(Account.ignoreFriend47,1051
+    public void unIgnoreFriend(Account.unIgnoreFriend51,1163
+    public boolean isFriendsWith(Account.isFriendsWith55,1280
+    public boolean isCurrentlyIgnoring(Account.isCurrentlyIgnoring59,1374
+    public int compareTo(Account.compareTo63,1481
+    public boolean hasFriends(Account.hasFriends67,1574
+    public Account[] getFriends(Account.getFriends71,1655
+    public int getPostAtLastSync(Account.getPostAtLastSync75,1763
+    public void setPostAtLastSync(Account.setPostAtLastSync79,1844
+    public boolean equals(Account.equals83,1936
 
 AddFriend.java,202
 public class AddFriend 3,30
@@ -32,16 +32,47 @@ public class AddFriend 3,30
     public AddFriend(AddFriend.AddFriend6,117
     public Account getFriend(AddFriend.getFriend10,220
 
-Feed.java,401
+Feed.java,454
 public class Feed 4,53
     private List<Post> posts Feed.posts5,73
     private Account account;Feed.account6,128
     public Feed(Feed.Feed8,158
     public void addPost(Feed.addPost12,236
-    public String renderAll(Feed.renderAll16,308
-    public void setAccount(Feed.setAccount20,389
-    public String renderLatest(Feed.renderLatest23,473
-    private String render(Feed.render27,551
+    public List<Post> getPosts(Feed.getPosts16,308
+    public String renderAll(Feed.renderAll20,377
+    public void setAccount(Feed.setAccount24,458
+    public String renderLatest(Feed.renderLatest27,542
+    private String render(Feed.render31,620
+
+FriendRequest.java,653
+public class FriendRequest 4,53
+    private Account requester;FriendRequest.requester5,132
+    private Account toBefriend;FriendRequest.toBefriend6,163
+    private Date timeStamp;FriendRequest.timeStamp7,195
+    public FriendRequest(FriendRequest.FriendRequest9,228
+    public Account getRequester(FriendRequest.getRequester15,415
+    public Account getToBefriend(FriendRequest.getToBefriend19,489
+    public Date getTimeStamp(FriendRequest.getTimeStamp23,565
+    public boolean hasTimedOut(FriendRequest.hasTimedOut27,636
+    public int compareTo(FriendRequest.compareTo31,781
+    public boolean equals(FriendRequest.equals41,1157
+
+FriendRequestResponse.java,1084
+public class FriendRequestResponse 3,30
+    private Account respondingUser;FriendRequestResponse.respondingUser4,125
+    private Account askingUser;FriendRequestResponse.askingUser5,161
+    private boolean requestAccepted;FriendRequestResponse.requestAccepted6,193
+    private boolean requestTimedOut;FriendRequestResponse.requestTimedOut7,231
+    public FriendRequestResponse(FriendRequestResponse.FriendRequestResponse9,269
+    public FriendRequestResponse(FriendRequestResponse.FriendRequestResponse15,494
+    public void accept(FriendRequestResponse.accept22,739
+    public void decline(FriendRequestResponse.decline26,811
+    public boolean hasAccepted(FriendRequestResponse.hasAccepted30,885
+    public boolean hasTimedOut(FriendRequestResponse.hasTimedOut34,972
+    public Account getAskingUser(FriendRequestResponse.getAskingUser38,1051
+    public Account getRespondingUser(FriendRequestResponse.getRespondingUser42,1127
+    public int compareTo(FriendRequestResponse.compareTo46,1219
+    public boolean equals(FriendRequestResponse.equals56,1615
 
 Login.java,419
 public class Login 1,0
@@ -69,6 +100,12 @@ public class NameChange 1,0
     public NameChange(NameChange.NameChange4,84
     public String getName(NameChange.getName8,158
 
+PasswordChange.java,220
+public class PasswordChange 3,30
+    private String password;PasswordChange.password4,83
+    public PasswordChange(PasswordChange.PasswordChange6,113
+    public String getPassword(PasswordChange.getPassword10,199
+
 Post.java,300
 public class Post 3,30
     private int globalPostId;Post.globalPostId4,74
@@ -90,52 +127,63 @@ public class RemoveFriend 3,30
     public RemoveFriend(RemoveFriend.RemoveFriend6,122
     public Account getFriend(RemoveFriend.getFriend10,234
 
-Server.java,2190
+Server.java,2880
 public class Server 5,58
     private Set<Account> knownUsers Server.knownUsers6,80
     private Set<Login> knownLogins Server.knownLogins7,142
     private List<Post> posts Server.posts8,201
-    public static void main(Server.main10,257
-    public Account getAccountFor(Server.getAccountFor32,1241
-    private Login getLoginFor(Server.getLoginFor40,1423
-    public synchronized void addAccount(Server.addAccount47,1613
-    private synchronized void addLogin(Server.addLogin51,1705
-    public synchronized void removeAccount(Server.removeAccount55,1795
-    public synchronized Set<Account> getAccounts(Server.getAccounts59,1893
-    public synchronized List<Post> getNewFriendPosts(Server.getNewFriendPosts64,2081
-    public synchronized List<Post> getNewPosts(Server.getNewPosts75,2455
-    public synchronized List<Post> getPosts(Server.getPosts84,2846
-    public synchronized void addPost(Server.addPost88,2949
-    static class ClientProxy Server.ClientProxy92,3030
-        private Account account;Server.ClientProxy.account93,3076
-        private Socket socket;Server.ClientProxy.socket95,3141
-        private Server server;Server.ClientProxy.server96,3172
-        private ObjectOutputStream outgoing;Server.ClientProxy.outgoing97,3203
-        private ObjectInputStream incoming;Server.ClientProxy.incoming98,3248
-        private ClientProxy(Server.ClientProxy.ClientProxy100,3293
-        public static void attemptEstablishConnection(Server.ClientProxy.attemptEstablishConnection112,3813
-        private synchronized int getUniqueGlobalPostId(Server.ClientProxy.getUniqueGlobalPostId146,5509
-        private void logout(Server.ClientProxy.logout150,5626
-        private void postMessage(Server.ClientProxy.postMessage161,5987
-        private void addFriend(Server.ClientProxy.addFriend165,6137
-        private void removeFriend(Server.ClientProxy.removeFriend170,6270
-        private void updateAccount(Server.ClientProxy.updateAccount175,6412
-        private void updateName(Server.ClientProxy.updateName180,6561
-        private void sync(Server.ClientProxy.sync185,6669
-        public void run(Server.ClientProxy.run198,7201
+    private Set<FriendRequest> pendingFriendRequests Server.pendingFriendRequests9,256
+    private Set<FriendRequestResponse> friendRequestResponses Server.friendRequestResponses10,341
+    public static void main(Server.main12,448
+    public Account getAccountFor(Server.getAccountFor34,1432
+    private Login getLoginFor(Server.getLoginFor42,1614
+    public synchronized void addAccount(Server.addAccount49,1804
+    private synchronized void addLogin(Server.addLogin53,1896
+    public synchronized void removeAccount(Server.removeAccount57,1986
+    public synchronized Set<Account> getAccounts(Server.getAccounts61,2084
+    public synchronized List<Post> getNewFriendPosts(Server.getNewFriendPosts66,2272
+    public synchronized List<Post> getNewPosts(Server.getNewPosts79,2657
+    public synchronized List<Post> getPosts(Server.getPosts88,3049
+    public synchronized void addPost(Server.addPost92,3152
+    static class ClientProxy Server.ClientProxy96,3233
+        private Account account;Server.ClientProxy.account97,3279
+        private Socket socket;Server.ClientProxy.socket99,3344
+        private Server server;Server.ClientProxy.server100,3375
+        private ObjectOutputStream outgoing;Server.ClientProxy.outgoing101,3406
+        private ObjectInputStream incoming;Server.ClientProxy.incoming102,3451
+        private ClientProxy(Server.ClientProxy.ClientProxy104,3496
+        public static void attemptEstablishConnection(Server.ClientProxy.attemptEstablishConnection116,4016
+        private synchronized int getUniqueGlobalPostId(Server.ClientProxy.getUniqueGlobalPostId150,5791
+        private void logout(Server.ClientProxy.logout154,5908
+        private void postMessage(Server.ClientProxy.postMessage166,6322
+        private void addFriend(Server.ClientProxy.addFriend170,6472
+        private void removeFriend(Server.ClientProxy.removeFriend175,6605
+        private void updateAccount(Server.ClientProxy.updateAccount180,6747
+        private void updateName(Server.ClientProxy.updateName185,6896
+        private void updatePassword(Server.ClientProxy.updatePassword189,6995
+        private Set<FriendRequest> getFriendRequests(Server.ClientProxy.getFriendRequests194,7184
+        private void queueFriendRequestResponses(Server.ClientProxy.queueFriendRequestResponses208,7724
+        private Set<FriendRequestResponse> getFriendRequestResponses(Server.ClientProxy.getFriendRequestResponses213,7889
+        private void queueFriendRequest(Server.ClientProxy.queueFriendRequest235,8903
+        private void sync(Server.ClientProxy.sync239,9039
+        public void run(Server.ClientProxy.run254,9813
 
 SyncRequest.java,30
 public class SyncRequest 1,0
 
-SyncResponse.java,325
+SyncResponse.java,646
 public class SyncResponse 5,75
     private Set<Account> users;SyncResponse.users6,127
     private List<Post> posts;SyncResponse.posts7,159
-    public SyncResponse(SyncResponse.SyncResponse9,190
-    public List<Post> getPosts(SyncResponse.getPosts14,317
-    public Set<Account> getUsers(SyncResponse.getUsers18,386
+    private Set<FriendRequestResponse> responses;SyncResponse.responses8,189
+    private Set<FriendRequest> friendRequests;SyncResponse.friendRequests9,239
+    public SyncResponse(SyncResponse.SyncResponse11,291
+    public List<Post> getPosts(SyncResponse.getPosts18,573
+    public Set<Account> getUsers(SyncResponse.getUsers22,642
+    public Set<FriendRequestResponse> getResponses(SyncResponse.getResponses26,713
+    public Set<FriendRequest> getRequests(SyncResponse.getRequests30,806
 
-Twitterish.java,2212
+Twitterish.java,2848
 public class Twitterish 5,58
     public static void main(Twitterish.main6,84
     private static class Client Twitterish.Client21,692
@@ -155,16 +203,24 @@ public class Twitterish 5,58
         private void postMessage(Twitterish.Client.postMessage77,2607
         private void printEnumeratedChoices(Twitterish.Client.printEnumeratedChoices86,2879
         private void addFriend(Twitterish.Client.addFriend92,3093
-        private void removeFriend(Twitterish.Client.removeFriend114,3879
-        private void unIgnoreFriend(Twitterish.Client.unIgnoreFriend134,4637
-        private void ignoreFriend(Twitterish.Client.ignoreFriend154,5435
-        private void quit(Twitterish.Client.quit173,6135
-        private void editAccount(Twitterish.Client.editAccount178,6287
-        private void listFriends(Twitterish.Client.listFriends204,7308
-        private void updateFeed(Twitterish.Client.updateFeed213,7649
-        private void updateFriends(Twitterish.Client.updateFriends220,7858
-        private void syncWithServer(Twitterish.Client.syncWithServer230,8261
-        private void loginOrCreateUser(Twitterish.Client.loginOrCreateUser256,9146
-        private void displaySplashScreen(Twitterish.Client.displaySplashScreen280,10226
-        private boolean action(Twitterish.Client.action292,10907
-        public void start(Twitterish.Client.start350,12751
+        private boolean validIndex(Twitterish.Client.validIndex121,4100
+        private void removeFriend(Twitterish.Client.removeFriend124,4223
+        private void unIgnoreFriend(Twitterish.Client.unIgnoreFriend148,5101
+        private void ignoreFriend(Twitterish.Client.ignoreFriend168,5899
+        private void quit(Twitterish.Client.quit187,6599
+        private void editName(Twitterish.Client.editName192,6751
+        private void editPassword(Twitterish.Client.editPassword199,7053
+        private void editAccount(Twitterish.Client.editAccount205,7338
+        private void listFriends(Twitterish.Client.listFriends237,8383
+        private void updateFeed(Twitterish.Client.updateFeed246,8724
+        private void updatePosts(Twitterish.Client.updatePosts253,8933
+        private void updateFriends(Twitterish.Client.updateFriends262,9274
+        private void approveFriendRequest(Twitterish.Client.approveFriendRequest274,9769
+        private void declineFriendRequest(Twitterish.Client.declineFriendRequest281,10110
+        private void respondToFriend(Twitterish.Client.respondToFriend287,10406
+        private void handleResponse(Twitterish.Client.handleResponse316,11401
+        private void syncWithServer(Twitterish.Client.syncWithServer332,12090
+        private void loginOrCreateUser(Twitterish.Client.loginOrCreateUser356,13030
+        private void displaySplashScreen(Twitterish.Client.displaySplashScreen380,14159
+        private boolean action(Twitterish.Client.action392,14840
+        public void start(Twitterish.Client.start450,16684

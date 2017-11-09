@@ -17,6 +17,7 @@ public class Account implements Serializable, Comparable<Account> {
     public Account(String userId, String name) {
         this(userId);
         this.name = name;
+        this.addFriend(this);
     }
 
 
