@@ -4,20 +4,26 @@ import java.io.Serializable;
 
 public class Account implements Serializable, Comparable<Account> {
     private String name;
-    private String password;
     private String userId;
-    private boolean passwordReset;
     private Set<Account> friends = new TreeSet<Account>();
     private Set<Account> ignoredFriends = new TreeSet<Account>();
+    private int newFeedNr;
 
-    public Account(String userId, String password) {
+    public Account(String userId) {
         this.userId   = userId;
-        this.password = password;
     }
 
-    public Account(String userId, String password, String name) {
-        this(userId, password);
+    public Account(String userId, String name) {
+        this(userId);
         this.name = name;
+    }
+
+    public void setNewFeedNr(int newPostNr) {
+        this.newFeedNr = newPostNr;
+    }
+
+    public int getNewFeedNr() {
+        return this.newFeedNr;
     }
 
     public String getName() {
@@ -26,12 +32,7 @@ public class Account implements Serializable, Comparable<Account> {
     public void setName(String name) {
         this.name = name;
     }
-    public String getPassword() {
-        return this.password;
-    }
-    public void setPassword(String password) {
-        this.password = password;
-    }
+       
     public String getUserId() {
         return this.userId;
     }

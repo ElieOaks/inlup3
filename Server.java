@@ -5,6 +5,7 @@ import java.net.*;
 public class Server {
     private Set<Account> knownUsers = new TreeSet<Account>();
     private List<Post> posts = new LinkedList<Post>();
+    private List<UserPassword> passwords = new LinkedList<UserPassword>();
 
     public static void main(String[] args) {
         try {
@@ -47,9 +48,27 @@ public class Server {
         return new TreeSet<Account>(this.knownUsers);
     }
 
-    public synchronized List<Post> getPosts() {
+   public synchronized List<Post> getPosts() {
         return new ArrayList<Post>(this.posts);
+   }
+
+    
+    public synchronized List<Post> getFriendsPosts(Account a) {
+        List<Post> newPosts = this.posts.subList(a.getNewFeedNr(), this.posts.size());
+        a.setNewFeedNr(this.posts.size()); //Kommer bara se de posts från efter vi blir vänner.
+        return getNewPosts(a, newPosts);
     }
+
+    public synchronized List<Post> getNewPosts(Account a, List<Post> newPosts) {
+        ArrayList<Post> friendsPost = new ArrayList<Post>();
+        for (Post p : newPosts)
+            if (a.isFriendsWith(p.getPoster())) {
+                friendsPost.add(p);
+            }       
+        return friendsPost;
+    }
+
+    
 
     public synchronized void addPost(Post p) {
         this.posts.add(p);
@@ -80,12 +99,15 @@ public class Server {
             if (handShake instanceof Login) {
                 Account account = ((Login) handShake).getAccount();
                 Account knownAccount = server.getAccountFor(account.getUserId());
+                UserPassword idAndPassword = new UserPassword(((Login) handShake).getPassword(), account.getUserId());
 
                 if (knownAccount == null) {
                     server.addAccount(account);
+                    server.passwords.add(0, idAndPassword);
                     new ClientProxy(account, socket, server, incoming).start();
-                } else {
-                    if (knownAccount.getPassword().equals(account.getPassword()) == false) throw new RuntimeException("Wrong password");
+                }
+                else {
+                    if (server.passwords.contains(idAndPassword) == false) throw new RuntimeException("Wrong password");
                     new ClientProxy(knownAccount, socket, server, incoming).start();
                 }
             } else {
@@ -102,7 +124,7 @@ public class Server {
         }
 
         private void logout(Account a) {
-            this.server.removeAccount(a);
+            //this.server.removeAccount(a);
             System.out.println("!! " + a.getUserId() + " left the building");
             try {
                 this.outgoing.close();
@@ -120,7 +142,7 @@ public class Server {
             this.account.addFriend(a);
             a.addFriend(this.account);
         }
-
+ 
         private void removeFriend(Account a) {
             this.account.removeFriend(a);
             a.removeFriend(this.account);
@@ -142,10 +164,9 @@ public class Server {
         private void sync() {
             try {
                 System.out.println("<< SyncResponse");
-                this.outgoing.
-                    writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
-                                                 new LinkedList<Post>(this.server.getPosts())));
-                this.outgoing.flush();
+                this.outgoing.writeObject(new SyncResponse(new HashSet<Account>(this.server.getAccounts()),
+                                                           new LinkedList<Post>(this.server.getFriendsPosts(this.account))));
+                this.outgoing.flush();  
             } catch (IOException ioe) {
                 ioe.printStackTrace();
             }
@@ -159,9 +180,8 @@ public class Server {
                     // o instanceof Account checks if o is an account
                     // (Account) o type casts o into an Account so that it can be used as one
                     if (o instanceof NameChange) {
-                        this.updateName( ((NameChange) o).getAccount()); 
-                    }
-                    if (o instanceof Account) {
+                        this.updateName(((NameChange) o).getAccount());
+                    } else if (o instanceof Account) {
                         this.updateAccount(this.account, (Account) o); 
                     } else if (o instanceof PostMessage) {
                         this.postMessage(((PostMessage) o).getMsg());

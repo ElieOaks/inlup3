@@ -8,19 +8,21 @@ public class Feed {
         posts.add(0, post);
     }
 
-    public String renderAll() {
-        return this.render(posts.size());
+    public String renderAll(Account a) {
+        return this.render(posts.size(), a);
     }
 
-    public String renderLatest(int n) {
-        return this.render(n);
+    public String renderLatest(int n, Account a) {
+        return this.render(n, a);
     }
 
-    private String render(int n) {
+    private String render(int n, Account a) {
         String result = "";
 
         for (Post p : this.posts) {
-            result = result + p.render();
+            if (a.isFriendsWith(p.getPoster()) && !a.isCurrentlyIgnoring(p.getPoster())) {
+                result = result + p.render();
+            }
             if (--n < 0) break;
         }
 

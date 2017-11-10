@@ -28,6 +28,7 @@ public class Twitterish {
         private String serverIp;
         private String myIp;
         private int port;
+        private Login login;
 
         public Client(String serverIp, int port) {
             this.serverIp = serverIp;
@@ -178,7 +179,7 @@ public class Twitterish {
             System.out.print("Enter your password: ");
             String password = new String(System.console().readPassword());
 
-            if (password.equals(this.loggedInUser.getPassword())) {
+            if (this.login.checkPassword(password)) {
                 System.out.print("Update your password: ");
                 password = new String(System.console().readPassword());
 
@@ -188,7 +189,8 @@ public class Twitterish {
                 String userid = this.loggedInUser.getUserId();
 
                 if(name.equals(this.loggedInUser.getName())) {
-                    this.sendMessage(new Account(userid, password, name));    
+                    this.sendMessage(new Account(userid, name));
+                    this.login.setPassword(password);
                 }
                 else {
                     this.loggedInUser.setName(name);
@@ -210,30 +212,21 @@ public class Twitterish {
         }
 
         private void updateFeed() {
-            this.feed = new Feed();
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
             for (Post p : ((SyncResponse) o).getPosts()) {
-                this.feed.addPost(p);
+                this.newPost(p);
             }
-            System.out.print(this.feed.renderAll());
+            System.out.print(this.feed.renderAll(this.loggedInUser));
             return; 
         }
 
         private void syncWithServer() {
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
+            knownUsers = new TreeSet<Account>();
             if (o instanceof SyncResponse) {
-                this.knownUsers.addAll(((SyncResponse) o).getUsers());
-                // TODO
-                // Go through all known users on this side of the fence
-                // and update them if their name has changed
-                    
-                // TODO
-                // Only print the posts that I am interested in
-
-                 
-
+                this.knownUsers.addAll(((SyncResponse) o).getUsers());  
             } else {
                 System.out.println("Error: expected sync response, got " + o.getClass());
             }
@@ -257,13 +250,19 @@ public class Twitterish {
             assert(name.length() > 0);
 
             System.out.println("Logging in new user " + userid + "...");
-            outgoing.writeObject(new Login(new Account(userid, password, name)));
+            Login login = new Login(new Account(userid, name), password); //FIX username!
+            
+            outgoing.writeObject(login);
 
             this.outgoing = outgoing;
             incoming = new ObjectInputStream(socket.getInputStream());
             Account a = (Account) receiveMessage();
             this.loggedInUser = a;
-        }
+
+           sendMessage(new AddFriend(this.loggedInUser));
+            this.loggedInUser.addFriend(this.loggedInUser);   
+            this.feed = new Feed();
+        this.login = login;        }
 
         private void displaySplashScreen() {
             System.out.println("");
@@ -280,13 +279,13 @@ public class Twitterish {
         private boolean action() {
             System.out.println("Actions:");
             System.out.print("[P]ost message    | ");
-            System.out.print("[S]ync with server | ");
+            System.out.print("[S]ync with server| ");
             System.out.print("[U]pdate feed     | ");
             System.out.print("[A]dd friend      | ");
             System.out.print("[R]emove friend   | ");
             System.out.println();
             System.out.print("[I]gnore friend   | ");
-            System.out.print("Uni[g]nore friend  | ");
+            System.out.print("Uni[g]nore friend | ");
             System.out.print("[L]ist friends    | ");
             System.out.print("[E]dit account    | ");
             System.out.print("[Q]uit");
