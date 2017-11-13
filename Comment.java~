@@ -1,8 +1,11 @@
-public class Comment {
-    private Account authour;
-    String comment;
+import java.io.Serializable;
 
-    public Comment(Account authour, String comment) {
+public class Comment implements Serializable {
+    private Account author;
+    String comment;
+    private int globalPostId;
+
+    public Comment(Account author, String comment) {
         this.author = author;
         this.comment = comment;
     }
@@ -14,4 +17,8 @@ public class Comment {
     public Account getAuthor() {
         return this.author;
     }
-}
+
+    public String toString() {
+        return "\t|" + this.author.getName() + ": " + this.comment+"\n";
+    }
+} 

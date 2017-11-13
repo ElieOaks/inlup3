@@ -16,8 +16,4 @@ public class Like implements Serializable {
     public getLikedPost() {
         return this.liked;
     }
-
-    public String toString() {
-        return 
-            }
 } 

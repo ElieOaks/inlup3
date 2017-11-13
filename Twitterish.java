@@ -1,7 +1,10 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
+/**
+ * The Twitterish class is the main class in the Twitterish char application. It contains the nested class Client wich handles 
+ * all client side logic such as posting messenges, adding friends etc.
+ */
 public class Twitterish {
     public static void main(String[] args) {
         if (args.length != 2) {
@@ -18,6 +21,10 @@ public class Twitterish {
 
     // This is a nested class, we will go into this later in the course.
     // For now, think of this as a class which is only usable by the Server.
+    /**
+     * The Client class contains all the logic for the client side of the application along with all information regarding
+     * an individual user on the server.
+     */
     private static class Client {
         private Account loggedInUser;
         private Set<Account> knownUsers = new TreeSet<Account>();
@@ -29,16 +36,31 @@ public class Twitterish {
         private String myIp;
         private int port;
 
+        /**
+         * Constructor for Client
+         * @param serverIp Ip adress for the server to connect to
+         * @param port Port number to use
+         */
         public Client(String serverIp, int port) {
             this.serverIp = serverIp;
             this.port = port;
             this.feed = new Feed(this.loggedInUser);
         }
 
+        /**
+         * Adds a new account to the clients list of known accounts on the server
+         * @param account The account to add
+         * @return None
+         */        
         private void newAccount(Account account) {
             this.knownUsers.add(account);
         }
 
+        /**
+         * Adds a post to the clients feed
+         * @param post The post to add
+         * @return None
+         */        
         private void newPost(Post post) {
             if (this.loggedInUser.isFriendsWith(post.getPoster()) &&
                 !this.loggedInUser.isCurrentlyIgnoring(post.getPoster())) {
@@ -50,6 +72,11 @@ public class Twitterish {
 
         // This is the code that sends a message to the server.
         // You should not need to touch this code.
+        /**
+         * Sends a message to the server
+         * @param o The message to be sent
+         * @return None
+         */        
         private void sendMessage(Object o) {
             try {
                 this.outgoing.writeObject(o);
@@ -61,6 +88,10 @@ public class Twitterish {
 
         // This is the code that receives a message to the server.
         // You should not need to touch this code.
+        /**
+         * Retrieves messages from the server
+         * @return Object Message received from the server
+         */        
         private Object receiveMessage() {
             try {
                 Object o = this.incoming.readObject();
@@ -74,6 +105,10 @@ public class Twitterish {
             return null;
         }
 
+        /**
+         * Reads a new post from the user and sends it to the server
+         * @return None
+         */        
         private void postMessage() {
             System.out.println("Write your message on a single line: ");
 
@@ -83,20 +118,57 @@ public class Twitterish {
             System.out.println("Message sent");
         }
 
-        private void comment() {
-            printPostsForComment();
-            int choice = select("What to comment?", this.feed.getPosts().size());
-            Post toComment = this.feed.getPosts().get(choice);
-
+        /**
+         * Reads a new comment from the user and sends it to the server
+         * @param toComment The post that is being commented
+         * @return None
+         */        
+        private void comment(Post toComment) {
             System.out.println("Write your comment: ");
-            String comment = System.console().readLine();
+            String commentString = System.console().readLine();
 
-            if(comment != "") {
-                toComment.addComment(new Comment(this.loggedInUser, comment));
-                sendMessage(new CommentMessage(comment, toComment.getPostId(), this.loggedInUser));
-            }   
+            if(commentString != "") {
+                Comment comment = new Comment(this.loggedInUser, toComment, commentString); 
+                sendMessage(new CommentMessage(comment));
+            } 
         }
 
+        /**
+         * Likes a post and forwards this information to the server
+         * @param toLike The post that is being liked
+         */        
+        private void like(Post toLike) {
+            Like like = new Like(this.loggedInUser, toLike); 
+            sendMessage(new LikeMessage(like));
+        }
+
+        /**
+         * Prompts the user to select a post in the feed and wether to comment or like it.
+         */        
+        private void commentOrLike() {
+            printPostsForComment();
+            int choice = select("What to comment or like?", this.feed.getPosts().size());
+            Post post = this.feed.getPosts().get(choice);
+            System.out.println("Do You want to [c]omment or [l]ike this post?  [a] to abort.");
+            String answer = System.console().readLine().toLowerCase();
+
+            switch (answer.charAt(0)) {
+            case 'c':
+                    this.comment(post);
+                    return;
+            case 'l':
+                this.like(post);
+                return;
+            case 'a':
+                return;
+            }
+            System.out.println("Invalid input.\n");
+            
+        }
+
+        /**
+         * Prints all posts in the clients feed with associated indexes onto the screen.
+         */      
         private void printPostsForComment() {
             int i = 0;
             for(Post p : this.feed.getPosts()) {
@@ -105,12 +177,20 @@ public class Twitterish {
             }
         }
 
+        /**
+         * Prints a list of accounts with corresponding indexes onto the screen
+         * @param choices A list of Accounts
+         */      
         private void printEnumeratedChoices(Account[] choices) {
             for (int i = 0; i < choices.length; ++i) {
                 System.out.println(i + "\t" + choices[i].getName());
             }
         }
 
+        /**
+         * Lists all users known to the client with corresponding indexes and prompts the user to select wich user to befriend.
+         * The method then sends a FriendRequest to the server.
+         */      
         private void addFriend() {
             if (this.knownUsers.size() == 0) {
                 System.out.println("You seem to be alone in the universe, at this moment.");
@@ -119,9 +199,10 @@ public class Twitterish {
 
             Account[] knownUsers = (Account[]) this.knownUsers.toArray(new Account[0]);
             Arrays.sort(knownUsers);
+            System.out.println("\nLogged in users:");
             printEnumeratedChoices(knownUsers);
 
-            int choice = select("Who to befriend?", this.knownUsers.size());
+            int choice = select("\nWho to befriend?", this.knownUsers.size());
             Account friend = knownUsers[choice];
 
             sendMessage(new FriendRequest(this.loggedInUser, friend));
@@ -131,9 +212,20 @@ public class Twitterish {
             System.out.println("Request sent to " + friend.getName()); 
         }
 
+        /**
+         * Determines whether or not an index is within the boundaries of a given range.
+         * @param index The index to examine.
+         * @param max The end of the allowed range, exclusive.
+         * @return boolean true if index was within the range, otherwise false
+         */      
         private boolean validIndex(int index, int max) {
             return index >= 0 && index < max;
         }
+
+        /**
+         * Prompts the user to select an Account to remove from the clients list of friends
+         * @return None
+         */      
         private void removeFriend() {
             if (this.loggedInUser.hasFriends() == false) {
                 System.out.println("You don't have anyone to unfriend. Try to make a few friends first.");
@@ -152,6 +244,12 @@ public class Twitterish {
             System.out.println("Unfriended " + friend.getName());
         }
 
+        /**
+         * Prints a question onto the screen and reads an answer from the user and converts it to an integer.
+         * @param question The question to be printed
+         * @param max The smallest number greater than 0 to not be a valid answer
+         * @return int The integer given by the user
+         */      
         private int select(String question, int max) {
             int choice = 0;
             do {
@@ -162,6 +260,9 @@ public class Twitterish {
             return choice;
         }
 
+        /**
+         * Removes an account from the clients list of ignored friends
+         */      
         private void unIgnoreFriend() {
             if (this.loggedInUser.hasFriends() == false) {
                 System.out.println("You don't have anyone to ignore. Try to make a few friends first.");
@@ -179,7 +280,10 @@ public class Twitterish {
 
             System.out.println("Unignored " + friend.getName());
         }
-            
+
+        /**
+         * Adds an account from the clients list of ignored friends
+         */      
         private void ignoreFriend() {
             if (this.loggedInUser.hasFriends() == false) {
                 System.out.println("You don't have anyone to ignore. Try to make a few friends first.");
@@ -196,11 +300,17 @@ public class Twitterish {
             System.out.println("Ignored " + friend.getName());
         }
 
+        /**
+         * Exits the program
+         */      
         private void quit() {
             System.out.println("Logging out...");
             this.sendMessage(new Logout(this.loggedInUser));
         }
 
+        /**
+         * Edits the users name and sends the updated information to the server
+         */      
         private void editName() {
             System.out.print("Enter your user name (presently " + this.loggedInUser.getName() + "): ");
             String name = System.console().readLine();
@@ -208,12 +318,19 @@ public class Twitterish {
             this.sendMessage(new NameChange(name)); 
         }
 
+        /**
+         * Edits the users password and sends the updated information to the server
+         */      
         private void editPassword() {
             System.out.print("Update your password: ");
             String password = new String(System.console().readPassword());
             this.login.setPassword(password);
             this.sendMessage(new PasswordChange(password));
         }
+
+        /**
+         * Edits the users password or name and sends the updated information to the server
+         */      
         private void editAccount() {
             System.out.print("Enter your password: ");
             String password = new String(System.console().readPassword());
@@ -245,7 +362,10 @@ public class Twitterish {
                 System.out.println("Wrong password!");
             }
         }
-        
+
+        /**
+         * Prints all of the users friends onto the screen
+         */      
         private void listFriends() {
             if (this.loggedInUser.hasFriends()) {
                 Account[] friends = this.loggedInUser.getFriends();
@@ -255,6 +375,9 @@ public class Twitterish {
             }
         }
 
+        /**
+         * Synchronizes the client with the server and prints all posts in the users feed onto the screen.
+         */      
         private void updateFeed() {
             this.syncWithServer();
             this.feed.setAccount(this.loggedInUser);
@@ -262,6 +385,10 @@ public class Twitterish {
             return; 
         }
 
+        /**
+         * Updates all posts made by a given account
+         * @param account The account whos posts are to be updated
+         */      
         private void updatePosts(Account account) {
             for (Post p : this.feed.getPosts()) {
                 if(p.getPoster().getUserId().equals(account.getUserId())) {
@@ -270,7 +397,10 @@ public class Twitterish {
             }
         }
 
-        /// Uppdaterar namnändringar i listan av vänner
+        /**
+         * Updates the names of all friends that has made a name change since the last sync.
+         * @param accounts Set of Accounts containing the up-to-date accounts.
+         */      
         private void updateFriends(Set<Account> accounts) {
             for(Account fromServer : accounts) {
                 for(Account fromClient : this.loggedInUser.getFriends()) {
@@ -283,6 +413,25 @@ public class Twitterish {
             } 
         }
 
+        /**
+         * Updates a post in the clients feed with either a like or comment from the server.
+         * @param p PostAction containing either a Like or Comment.
+         */      
+        private void addActions(PostAction p) {
+            for(Post post : this.feed.getPosts()) {
+                if(post.getPostId() == p.getPostId()) {
+                    if(p instanceof Like) 
+                        post.like((Like)p); 
+                    else 
+                        post.addComment((Comment)p); 
+                }
+            }
+        }
+
+        /**
+         * Adds an account to the users list of friends and sends the response to the server.
+         * @param friend The Account to befriend.
+         */      
         private void approveFriendRequest(Account friend) {
             this.loggedInUser.addFriend(friend);
             System.out.println("Du godkände " + friend.getName() + "'s förfrågan.");
@@ -290,12 +439,19 @@ public class Twitterish {
             sendMessage(new AddFriend(friend));
         }
 
+        /**
+         * Sends a message to the server to decline a pending friend request
+         * @param friend The Account that made the friend request.
+         */      
         private void declineFriendRequest(Account friend) {
             System.out.println("Du avböjde " + friend.getName() + "'s förfrågan.");
             sendMessage(new FriendRequestResponse(friend, this.loggedInUser, false));
         }
 
-        /// Hanterar inkommande vänförfrågningar
+        /**
+         * Prompts the user to either accept or decline an incoming friend request.
+         * @param f The FriendRequest to answer.
+         */      
         private void respondToFriend(FriendRequest f) {
             Account friend = f.getRequester(); 
             String name    = friend.getName();
@@ -324,11 +480,11 @@ public class Twitterish {
             }
         }
 
-        private void commentPost() {
-            
-        }
-
-        //Hanterar inkommande svar på vänförfrågningar
+        /**
+         * Handles an incoming FriendRequestResponse. If it was accepted, the user that was asked is added to this users friends,
+         * if it was declined or if the request timed out this is printed onto the screen.
+         * @param r The FriendRequestResponse to handle.
+         */      
         private void handleResponse(FriendRequestResponse r) {
             if(r.hasAccepted()) {
                 this.loggedInUser.addFriend(r.getRespondingUser());
@@ -344,7 +500,11 @@ public class Twitterish {
                 } 
             }
         }
-        
+
+        /**
+         * Synchronizes the client with the server. The client receives all new posts from friends since the last sync,
+         * any friend request or responses to friend requests along with comments or likes made by users since the last sync.
+         */      
         private void syncWithServer() {
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
@@ -357,7 +517,7 @@ public class Twitterish {
                 for (Post p : ((SyncResponse) o).getPosts()) this.newPost(p);
                 for (FriendRequestResponse r : ((SyncResponse) o).getResponses()) this.handleResponse(r); 
                 for (FriendRequest f : ((SyncResponse) o).getRequests()) this.respondToFriend(f);   
-                
+                for (PostAction p : ((SyncResponse)o).getPostActions()) this.addActions(p);
                 // TODO
                 // Only print the posts that I am interested in
 
@@ -368,7 +528,9 @@ public class Twitterish {
         }
 
 
-
+        /**
+         * Asks the user for login information and sends this information to the server for an attempted login.
+         */      
         private void loginOrCreateUser() throws IOException, UnknownHostException {
             Socket socket = new Socket(this.serverIp, port);
             this.outgoing = new ObjectOutputStream(socket.getOutputStream());
@@ -393,6 +555,9 @@ public class Twitterish {
             this.loggedInUser = a;
         }
 
+        /**
+         * Prints the Twitterish "logo" onto the screen.
+         */      
         private void displaySplashScreen() {
             System.out.println("");
             System.out.println("");
@@ -405,20 +570,23 @@ public class Twitterish {
             System.out.println("");
         }
 
+        /**
+         * Main loop. Prints the menu onto the screen and waits for user input.
+         */      
         private boolean action() {
             System.out.println("\nActions:");
             System.out.print("[P]ost message    | ");
             System.out.print("[S]ync with server | ");
             System.out.print("[U]pdate feed     | ");
             System.out.print("[A]dd friend      | ");
-            System.out.print("[R]emove friend   | ");
+            System.out.print("[R]emove friend | ");
             System.out.println();
             System.out.print("[I]gnore friend   | ");
             System.out.print("Uni[g]nore friend  | ");
             System.out.print("[L]ist friends    | ");
             System.out.print("[E]dit account    | ");
-            System.out.print("[C]omment post    | ");
-            System.out.print("[Q]uit");
+            System.out.print("[C]omment/Like  | ");
+            System.out.print("\n[Q]uit");
             System.out.println();
 
             String input = System.console().readLine().toLowerCase();
@@ -457,12 +625,12 @@ public class Twitterish {
                 this.listFriends();
                 return true;
             case 'c':
-                this.comment();
+                this.commentOrLike();
                 return true;
-            case 'q':
-                this.quit();
+                case 'q':
+                    this.quit();
                 return false;
-            }
+                            }
 
             return true;
         }
