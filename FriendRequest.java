@@ -79,7 +79,7 @@ public class FriendRequest implements Serializable, Comparable<FriendRequest>{
      * Determines if two FriendRequests are equal.
      * @param o The object to compare with.
      * @return boolean true if the objects are equal, otherwise false.
-    */    
+     */    
     public boolean equals(Object o) {
         if (o instanceof FriendRequest) {
             return ((FriendRequest) o).compareTo(this) == 0;

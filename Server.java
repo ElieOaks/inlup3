@@ -199,20 +199,20 @@ public class Server {
                 Login knownLogin     = server.getLoginFor(account.getUserId()); //Tries to find exesting login for this login attempt
                 Account knownAccount = server.getAccountFor(account.getUserId()); //Tries to retrieve existing account for this login attempt
 
-                    if (knownLogin == null) {
-                        System.out.println("Lägger till ett nytt Login till servern");
-                        server.addAccount(account);
-                        server.addLogin((Login) handShake); 
-                        new ClientProxy(account, socket, server, incoming).start();
-                    }
+                if (knownLogin == null) {
+                    System.out.println("Lägger till ett nytt Login till servern");
+                    server.addAccount(account);
+                    server.addLogin((Login) handShake); 
+                    new ClientProxy(account, socket, server, incoming).start();
+                }
                 
-                    else {
-                        if (knownLogin.getPassword().equals(((Login) handShake).getPassword()) == false){
-                            throw new RuntimeException("Wrong password");
-                        }
-                        System.out.println("Välkommen tillbaka " + account.getName());
-                        new ClientProxy(knownAccount, socket, server, incoming).start(); //Denna ska troligen vara knownAccount men då får vi nullPointerException.
+                else {
+                    if (knownLogin.getPassword().equals(((Login) handShake).getPassword()) == false){
+                        throw new RuntimeException("Wrong password");
                     }
+                    System.out.println("Välkommen tillbaka " + account.getName());
+                    new ClientProxy(knownAccount, socket, server, incoming).start(); //Denna ska troligen vara knownAccount men då får vi nullPointerException.
+                }
             }
 
             else {
@@ -228,8 +228,8 @@ public class Server {
         
         /**
          * Increments and returns the servers post counter. Used as identification for posts. 
-         * @return int The current post counter
-         */
+             * @return int The current post counter
+                 */
         private synchronized int getUniqueGlobalPostId() {
             return ++this.server.globalPostIdCounter;
         }
@@ -267,7 +267,7 @@ public class Server {
             for(Post p : this.server.posts) {
                 if(postId == p.getPostId())
                     return p; 
-                }
+            }
             return null;
         }
 

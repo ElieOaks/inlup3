@@ -154,8 +154,8 @@ public class Twitterish {
 
             switch (answer.charAt(0)) {
             case 'c':
-                    this.comment(post);
-                    return;
+                this.comment(post);
+                return;
             case 'l':
                 this.like(post);
                 return;
