@@ -17,15 +17,19 @@ public class Feed {
     }
 
     private String render(int n, Account a) {
-        String result = "";
+        //String result = "";
+        StringBuffer stringBuff = new StringBuffer();
 
         for (Post p : this.posts) {
             if (a.isFriendsWith(p.getPoster()) && !a.isCurrentlyIgnoring(p.getPoster())) {
-                result = result + p.render();
+                stringBuff.append(p); 
             }
             if (--n < 0) break;
         }
 
+        String result = stringBuff.toString();
         return result;
     }
+
+          
 }

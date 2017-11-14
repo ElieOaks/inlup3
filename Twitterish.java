@@ -35,7 +35,7 @@ public class Twitterish {
             this.port = port;
         }
 
-        private void newAccount(Account account) {
+        private void newAccount(Account account) { //FindBugs - This method is never used. Död kod.
             this.knownUsers.add(account);
         }
 
@@ -194,7 +194,8 @@ public class Twitterish {
                 }
                 else {
                     this.loggedInUser.setName(name);
-                    this.sendMessage(new NameChange(this.loggedInUser)); 
+                    this.sendMessage(new NameChange(this.loggedInUser, name));
+                    System.out.println("New name " + this.loggedInUser.getName());
                 }
 
             } else {
@@ -221,18 +222,26 @@ public class Twitterish {
             return; 
         }
 
+        //Syncs the clients knownUsers List, with servers. 
         private void syncWithServer() {
             this.sendMessage(new SyncRequest());
             Object o = this.receiveMessage();
-            knownUsers = new TreeSet<Account>();
             if (o instanceof SyncResponse) {
-                this.knownUsers.addAll(((SyncResponse) o).getUsers());  
+                Set<Account> allUsers = ((SyncResponse) o).getUsers();                
+                this.knownUsers.addAll(allUsers);
+
+                for (Account clientAccount: this.knownUsers)
+                    for (Account serverAccount: allUsers)
+                        if (clientAccount.equals(serverAccount)) {
+                            clientAccount.setName(serverAccount.getName());
+                        }
+                            
+                this.knownUsers = allUsers;
+                
             } else {
                 System.out.println("Error: expected sync response, got " + o.getClass());
             }
         }
-
-
 
         private void loginOrCreateUser() throws IOException, UnknownHostException {
             Socket socket = new Socket(this.serverIp, port);
@@ -254,7 +263,7 @@ public class Twitterish {
             
             outgoing.writeObject(login);
 
-            this.outgoing = outgoing;
+            // this.outgoing = outgoing; hittades med findbugs selfassignment. 
             incoming = new ObjectInputStream(socket.getInputStream());
             Account a = (Account) receiveMessage();
             this.loggedInUser = a;
@@ -277,7 +286,7 @@ public class Twitterish {
         }
 
         private boolean action() {
-            System.out.println("Actions:");
+            System.out.println(this.loggedInUser.getName() +"'s " + "Actions:");
             System.out.print("[P]ost message    | ");
             System.out.print("[S]ync with server| ");
             System.out.print("[U]pdate feed     | ");
@@ -291,11 +300,12 @@ public class Twitterish {
             System.out.print("[Q]uit");
             System.out.println();
 
-            String input = System.console().readLine().toLowerCase();
+            String input = System.console().readLine().toLowerCase(); //Felhantering och defensiv programmering hät tack. 
 
-            if (input.length() != 1) {
+            if (input.length() != 1 || input == null || ( input.equals("p") && input.equals("s") && input.equals("u") && input.equals("a") && input.equals("r") && input.equals("i") && input.equals("g") && input.equals("l") && input.equals("e") && input.equals("q"))) {
                 System.out.println("Invalid input");
                 return true;
+
             }
 
             switch (input.charAt(0)) {

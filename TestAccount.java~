@@ -1,0 +1,7 @@
+import org.junit.Test;
+import static org.junir.Assert.*;
+import java.util.*;
+
+public class TestAccount {
+    public Account = new Account("vde.joy@gmail.com", "jevde");
+}

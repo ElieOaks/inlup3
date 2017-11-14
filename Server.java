@@ -5,6 +5,8 @@ import java.net.*;
 public class Server {
     private Set<Account> knownUsers = new TreeSet<Account>();
     private List<Post> posts = new LinkedList<Post>();
+
+     //List of passwords with UserID:s,so p asswords are seperated from Accounts.
     private List<UserPassword> passwords = new LinkedList<UserPassword>();
 
     public static void main(String[] args) {
@@ -45,20 +47,24 @@ public class Server {
     }
 
     public synchronized Set<Account> getAccounts() {
-        return new TreeSet<Account>(this.knownUsers);
+        TreeSet<Account> allUsers = new TreeSet<Account>(this.knownUsers);
+            for (Account a: allUsers)
+                System.out.println("getAccount: "+ a.getName());
+        return allUsers;
     }
 
-   public synchronized List<Post> getPosts() {
+    public synchronized List<Post> getPosts() {
         return new ArrayList<Post>(this.posts);
    }
 
-    
+    //returns only the latest posts from friends.
     public synchronized List<Post> getFriendsPosts(Account a) {
         List<Post> newPosts = this.posts.subList(a.getNewFeedNr(), this.posts.size());
-        a.setNewFeedNr(this.posts.size()); //Kommer bara se de posts från efter vi blir vänner.
+        a.setNewFeedNr(this.posts.size()); //Only see posts from after start of friendship
         return getNewPosts(a, newPosts);
     }
 
+    //Filters away posts not from friends.
     public synchronized List<Post> getNewPosts(Account a, List<Post> newPosts) {
         ArrayList<Post> friendsPost = new ArrayList<Post>();
         for (Post p : newPosts)
@@ -68,10 +74,18 @@ public class Server {
         return friendsPost;
     }
 
-    
-
     public synchronized void addPost(Post p) {
         this.posts.add(p);
+    }
+
+    //Lets the Server know name has changed
+    public synchronized void updateName(Account neu, String name) {
+        for(Account user : this.knownUsers) {
+            if((user.getUserId()).equals(neu.getUserId())) {
+                user.setName(name);
+                System.out.println("New name: " + name);
+            }
+        }
     }
 
     static class ClientProxy extends Thread {
@@ -97,17 +111,19 @@ public class Server {
             Object handShake = incoming.readObject();
 
             if (handShake instanceof Login) {
-                Account account = ((Login) handShake).getAccount();
-                Account knownAccount = server.getAccountFor(account.getUserId());
-                UserPassword idAndPassword = new UserPassword(((Login) handShake).getPassword(), account.getUserId());
+                Account account = ((Login) handShake).getAccount(); //User that is logging in.
+                Account knownAccount = server.getAccountFor(account.getUserId()); //If this UserId is already in System
+                UserPassword idAndPassword = new UserPassword(((Login) handShake).getPassword(), account.getUserId()); //given password matches the given userId? 
 
                 if (knownAccount == null) {
+                    System.out.println("En ny användare läggs in i servern!");
                     server.addAccount(account);
                     server.passwords.add(0, idAndPassword);
                     new ClientProxy(account, socket, server, incoming).start();
                 }
                 else {
                     if (server.passwords.contains(idAndPassword) == false) throw new RuntimeException("Wrong password");
+                    System.out.println("En gammal användare har återvänt!");
                     new ClientProxy(knownAccount, socket, server, incoming).start();
                 }
             } else {
@@ -153,14 +169,6 @@ public class Server {
             server.addAccount(neu);
         }
 
-        private void updateName(Account neu) {
-            for(Account user : this.server.knownUsers) {
-                if(user.getUserId().equals(neu.getUserId())) {
-                    user.setName(neu.getName());
-                }
-            }
-        }
-
         private void sync() {
             try {
                 System.out.println("<< SyncResponse");
@@ -180,7 +188,7 @@ public class Server {
                     // o instanceof Account checks if o is an account
                     // (Account) o type casts o into an Account so that it can be used as one
                     if (o instanceof NameChange) {
-                        this.updateName(((NameChange) o).getAccount());
+                        this.server.updateName(((NameChange) o).getAccount(), ((NameChange) o).getName());
                     } else if (o instanceof Account) {
                         this.updateAccount(this.account, (Account) o); 
                     } else if (o instanceof PostMessage) {
@@ -197,7 +205,7 @@ public class Server {
                     }
                 }
             } catch (Exception e) {
-                // BAD Practise. Never catch "Exception"s. Too general.
+                // BAD Practise. Never catch "Exception"s. Too general. Needs to be more specific. Caught by Findbugs
                 e.printStackTrace();
             }
         }

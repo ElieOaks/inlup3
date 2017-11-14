@@ -1,0 +1,8 @@
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
+import org.junir.runner.notification.Failure;
+import junit.framework.*;
+
+
+public class TestFile {
+}

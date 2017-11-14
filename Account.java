@@ -7,6 +7,7 @@ public class Account implements Serializable, Comparable<Account> {
     private String userId;
     private Set<Account> friends = new TreeSet<Account>();
     private Set<Account> ignoredFriends = new TreeSet<Account>();
+
     private int newFeedNr;
 
     public Account(String userId) {
@@ -18,6 +19,7 @@ public class Account implements Serializable, Comparable<Account> {
         this.name = name;
     }
 
+    //Kepps track of how many new posts since last sync.
     public void setNewFeedNr(int newPostNr) {
         this.newFeedNr = newPostNr;
     }
@@ -25,7 +27,7 @@ public class Account implements Serializable, Comparable<Account> {
     public int getNewFeedNr() {
         return this.newFeedNr;
     }
-
+    
     public String getName() {
         return this.name;
     }
