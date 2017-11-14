@@ -1,11 +1,11 @@
 all:
-	javac *.java
+	javac ./source/*.java -d ./bin/
 
 client: all
-	java Twitterish localhost 8081
+	java -cp ./bin/ Twitterish localhost 8081
 
 server: all
-	java Server 8081
+	java -cp ./bin/ Server 8081
 
 test: TestFile.class
 	java -cp .:/usr/share/java/junit4.jar TestFile
@@ -17,6 +17,6 @@ TestAccount.class: TestAccount.java Account.class
 	javac -cp .:/usr/share/java/junit4.jar TestAccount.java
 
 clean:
-	rm -f *.class
-	rm -f *#
-	rm -f *~
+	rm -f ./bin/*.class
+	rm -f ./source/*#
+	rm -f ./source/*~
