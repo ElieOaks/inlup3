@@ -23,4 +23,5 @@ public class TestAccount {
         acc.addFriend(friend);
         assertTrue(acc.hasFriends());
     }
+
 }
