@@ -1,13 +1,19 @@
+JUNIT = ".:/usr/share/java/junit4.jar:source"
+
+
 all:
-	javac *.java
+	javac -cp $(JUNIT) ./source/*.java -d ./bin
 
 client: all
-	java Twitterish localhost 8082
+	java -cp ./bin/ Twitterish localhost 8082
 
 server: all
-	java Server 8082
+	java -cp ./bin/ Server 8082
+
+test: all
+	java -cp $(JUNIT) TestFile
 
 clean:
-	rm -f *.class
-	rm -f *#
-	rm -f *~
+	rm -f  ./bin/*.class
+	rm -f ./source/*#
+	rm -f ./source/*~
