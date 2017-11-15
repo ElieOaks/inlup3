@@ -452,6 +452,17 @@ public class Twitterish {
             sendMessage(new FriendRequestResponse(friend, this.loggedInUser, false));
         }
 
+        private void unfriend(Unfriend u) {
+            Account friend = u.getUnfriender();
+            String name = friend.getName();
+            String toRemoveId = u.getToUnfriend().getUserId();
+
+            if(this.loggedInUser.isFriendsWith(friend) && this.loggedInUser.getUserId().equals(toRemoveId)) {
+                System.out.println(name + " tog bort dig som vän. =(");
+                this.loggedInUser.removeFriend(friend);
+            }
+
+        }
         /**
          * Prompts the user to either accept or decline an incoming friend request.
          * @param f The FriendRequest to answer.
@@ -505,6 +516,7 @@ public class Twitterish {
             }
         }
 
+
         /**
          * Synchronizes the client with the server. The client receives all new posts from friends since the last sync,
          * any friend request or responses to friend requests along with comments or likes made by users since the last sync.
@@ -522,8 +534,7 @@ public class Twitterish {
                 for (FriendRequestResponse r : ((SyncResponse) o).getResponses()) this.handleResponse(r); 
                 for (FriendRequest f : ((SyncResponse) o).getRequests()) this.respondToFriend(f);   
                 for (PostAction p : ((SyncResponse)o).getPostActions()) this.addActions(p);
-                // TODO
-                // Only print the posts that I am interested in
+                for (Unfriend u : ((SyncResponse)o).getUnfriends()) this.unfriend(u);
 
             }
             else {

@@ -88,6 +88,7 @@ public class Account implements Serializable, Comparable<Account> {
      */
     public void removeFriend(Account a) {
         this.friends.remove(a);
+        a.friends.remove(this);
     }
 
     /**

@@ -8,6 +8,7 @@ public class Server {
     private List<Post> posts = new LinkedList<Post>();
     private Set<FriendRequest> pendingFriendRequests = new TreeSet<FriendRequest>();
     private Set<FriendRequestResponse> friendRequestResponses = new TreeSet<FriendRequestResponse>();
+    private Set<Unfriend> pendingUnfriends = new TreeSet<Unfriend>();
     private List<PostAction> postActions = new LinkedList<PostAction>();
     private int globalPostIdCounter = 0;
     private int globalActionIdCounter = 0;
@@ -315,8 +316,9 @@ public class Server {
          * @param a Account to unfriend from the ClientProxy's associated account.
          */
         private void removeFriend(Account a) {
+            System.out.println("Inne i removefriend");
             this.account.removeFriend(a);
-            a.removeFriend(this.account);
+            this.server.pendingUnfriends.add(new Unfriend(this.account, a));
         }
 
         /**
@@ -347,11 +349,27 @@ public class Server {
             l.setPassword(password);
         }
 
+        private Set<Unfriend> getUnfriends() {
+            String user = this.account.getUserId();
+            Set<Unfriend> unfriends = new TreeSet<Unfriend>();
+
+            for (Unfriend u : this.server.pendingUnfriends) {
+                String toUnfriend = u.getToUnfriend().getUserId();
+                if(toUnfriend.equals(user)) {
+                    this.account.removeFriend(u.getUnfriender());
+                    unfriends.add(u);
+                    this.server.pendingUnfriends.remove(u);
+                }
+            }
+
+            return unfriends;
+        }
+        
         /**
          * Retrieves all new friend requests for the ClientProxy's associated account
          * @return Set<FriendRequest> All new FriendRequests for the user.
          */
-        private Set<FriendRequest> getFriendRequests() {
+            private Set<FriendRequest> getFriendRequests() {
             String user = this.account.getUserId();
             Set<FriendRequest> requests = new TreeSet<FriendRequest>();
 
@@ -419,7 +437,8 @@ public class Server {
                                                  new LinkedList<Post>(this.server.getNewFriendPosts(this.account)),
                                                  new TreeSet<FriendRequestResponse>(this.getFriendRequestResponses()),
                                                  new TreeSet<FriendRequest>(this.getFriendRequests()),
-                                                 new LinkedList<PostAction>(this.server.getPostActions(this.account)))); 
+                                                 new LinkedList<PostAction>(this.server.getPostActions(this.account)),
+                                                 new TreeSet<Unfriend>(this.getUnfriends()))); 
                 this.outgoing.flush();
             } catch (IOException ioe) {
                 ioe.printStackTrace();

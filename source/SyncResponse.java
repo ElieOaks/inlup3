@@ -8,6 +8,7 @@ public class SyncResponse implements Serializable {
     private Set<FriendRequestResponse> responses;
     private Set<FriendRequest> friendRequests;
     private List<PostAction> postActions;
+    private Set<Unfriend> unfriends;
 
     /**
      * Constructor for SyncResponse
@@ -17,14 +18,18 @@ public class SyncResponse implements Serializable {
      * @param friendRequests All new friend requests adressed to the synchronizing account
      * @param postActions All new PostActions made since the last synchronization to posts authored by friends to the synchronizing account
      */
-    public SyncResponse(Set<Account> users, List<Post> posts, Set<FriendRequestResponse> responses, Set<FriendRequest> friendRequests, List<PostAction> postActions) {
+    public SyncResponse(Set<Account> users, List<Post> posts, Set<FriendRequestResponse> responses, Set<FriendRequest> friendRequests, List<PostAction> postActions, Set<Unfriend> unfriends) {
         this.users = users;
         this.posts = posts;
         this.responses = responses;
         this.friendRequests = friendRequests;
         this.postActions = postActions;
+        this.unfriends = unfriends;
     }
 
+    public Set<Unfriend> getUnfriends() {
+        return this.unfriends;
+    }
     /**
      * Retrieves new posts made by friends of the synchronizing account since the last synchronization
      * @return List<Post> All posts in the objects list of posts.
