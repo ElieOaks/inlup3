@@ -32,6 +32,10 @@ public class PostAction implements Serializable {
         return this.madeBy;
     }
 
+    public void setMaker(Account maker) {
+        this.madeBy = maker;
+    }
+
     /**
      * Get-method for the account that made the post contained in an instance.
      * @return Account The account that authored the post.

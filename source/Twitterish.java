@@ -401,6 +401,18 @@ public class Twitterish {
             }
         }
 
+        private void updateComments(Set<Account> accounts) {
+            for(Account fromServer : accounts) {
+                for(Post post : this.feed.getPosts()) {
+                    for(Comment comment : post.getComments()) {
+                        if (comment.getMaker().getUserId().equals(fromServer.getUserId())) {
+                            comment.setMaker(fromServer);
+                        }
+                    }
+                }
+            } 
+        }
+        
         /**
          * Updates the names of all friends that has made a name change since the last sync.
          * @param accounts Set of Accounts containing the up-to-date accounts.
@@ -529,7 +541,8 @@ public class Twitterish {
                 Set<Account> usersFromServer = ((SyncResponse)o).getUsers();
                 this.knownUsers.addAll(usersFromServer); 
                 this.updateFriends(usersFromServer);
-                
+                this.updateComments(usersFromServer);
+
                 for (Post p : ((SyncResponse) o).getPosts()) this.newPost(p);
                 for (FriendRequestResponse r : ((SyncResponse) o).getResponses()) this.handleResponse(r); 
                 for (FriendRequest f : ((SyncResponse) o).getRequests()) this.respondToFriend(f);   
